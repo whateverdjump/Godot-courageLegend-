@@ -1,0 +1,157 @@
+class_name Player
+extends CharacterBody2D
+@onready var character: Marker2D = $Character
+@onready var animated_sprite_2d: AnimatedSprite2D = $Character/AnimatedSprite2D
+@onready var state_ststem: StateStstem = $StateStstem
+@onready var coyote_timer: Timer = $CoyoteTimer
+@onready var wall_raycast: RayCast2D = $Character/WallRaycast
+@onready var back_wall_raycast: RayCast2D = $Character/BackWallRaycast
+@onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var attack_timer: Timer = $AttackTimer
+
+enum State {
+	IDLE,
+	RUN,
+	JUMP,
+	JUMPFALLINBETWEEN,
+	FALL,
+	WALLSLIDE,
+	WALLJUMP,
+	ATTACK1,
+	ATTACK2
+}
+
+var gravity := ProjectSettings.get_setting("physics/2d/default_gravity") as float
+var getLastDir := 1.0
+var lastState := -1
+
+const IS_FLOOR := [State.IDLE, State.RUN]
+const IS_FALL := [State.JUMPFALLINBETWEEN, State.FALL]
+const MOVE_SPEED := 200.0
+const JUMP_HEIGHT := -320.0
+const WALL_JUMP_HEIGHT := Vector2(1000, -350.0)
+const FLOOR_ACCELERATION := MOVE_SPEED / 0.1
+const AIR_ACCELERATION := MOVE_SPEED / 0.02
+const SLIDE_SPEED := 0.5
+
+func _unhandled_input(event: InputEvent) -> void:
+	if Input.is_action_just_pressed("jump"):
+		coyote_timer.start()
+	if Input.is_action_just_pressed("attack"):
+		attack_timer.start()
+
+func tick_physics(state: State, delta: float) -> void:
+	match state:
+		State.IDLE:
+			move(gravity, delta)
+		State.RUN:
+			move(gravity, delta)
+		State.JUMP:
+			move(gravity, delta)
+		State.JUMPFALLINBETWEEN, State.FALL:
+			move(gravity, delta)
+		State.WALLSLIDE:
+			slide(SLIDE_SPEED, delta)
+		State.WALLJUMP:
+			move(gravity, delta)
+
+func move(gravity: float, delta: float) -> void:
+	var dir = Input.get_axis("move_left","move_right")
+	var ACCELERATION := FLOOR_ACCELERATION if is_on_floor() else AIR_ACCELERATION
+	if dir:
+		character.scale.x = dir
+	velocity.x = move_toward(velocity.x, MOVE_SPEED * dir, ACCELERATION * delta)
+	velocity.y += gravity * delta
+	move_and_slide()
+func slide(gravity: float, delta: float) -> void:
+	var dir = Input.get_axis("move_left","move_right")
+	if dir:
+		character.scale.x = -dir
+	velocity.x = MOVE_SPEED * dir
+	if state_ststem.awaitTimer < 0.5:
+		velocity.y += gravity
+	else:
+		velocity.y += gravity * delta
+	move_and_slide()
+	
+func get_next_state(state: State) -> int:
+	var dir = Input.get_axis("move_left","move_right")
+	var can_run = is_on_floor() and dir
+#	郊狼时间
+	var can_jump = (state in IS_FLOOR and coyote_timer.time_left > 0) || (lastState in IS_FLOOR and coyote_timer.time_left > 0)
+	if can_jump:
+		return State.JUMP
+	if state in IS_FALL and wall_raycast.is_colliding() and dir:
+		return State.WALLSLIDE
+	if velocity.y > 0 and not state in IS_FALL and state != State.WALLSLIDE:
+		return State.JUMPFALLINBETWEEN
+#		当吸附在墙上的时候且不输入方向键, 则进入下落状态
+	if state == State.WALLSLIDE and not dir:
+		return State.JUMPFALLINBETWEEN
+
+	match state:
+		State.IDLE:
+			if attack_timer.time_left > 0:
+				return State.ATTACK1
+			if can_run:
+				return State.RUN
+		State.RUN:
+			if attack_timer.time_left > 0:
+				return State.ATTACK1
+			if not can_run:
+				return State.IDLE
+		State.JUMP:
+			if is_on_floor():
+				return State.IDLE
+		State.JUMPFALLINBETWEEN:
+			if not animated_sprite_2d.is_playing():
+				return State.FALL
+			if is_on_floor():
+				return State.IDLE
+		State.FALL:
+			if is_on_floor():
+				return State.IDLE
+		State.WALLSLIDE:
+			if coyote_timer.time_left > 0:
+				return State.WALLJUMP
+			if is_on_floor():
+				return State.IDLE
+		State.WALLJUMP:
+			if is_on_floor():
+				return State.IDLE
+		State.ATTACK1:
+			if not animation_player.is_playing() and attack_timer.time_left > 0:
+				return State.ATTACK2
+			if not animation_player.is_playing():
+				return State.IDLE
+		State.ATTACK2:
+			if not animation_player.is_playing():
+				return State.IDLE
+	
+	return state
+	
+func change_state(form: State, to: State) -> void:
+	lastState = form
+	match to:
+		State.IDLE:
+			animated_sprite_2d.play("idle")
+		State.RUN:
+			animated_sprite_2d.play("run")
+		State.JUMP:
+			velocity.y = JUMP_HEIGHT
+			animated_sprite_2d.play("jump")
+		State.JUMPFALLINBETWEEN:
+			animated_sprite_2d.play("jump_fall_inbet_ween")
+		State.FALL:
+			animated_sprite_2d.play("fall")
+		State.WALLSLIDE:
+			animated_sprite_2d.play("wall_slide")
+		State.WALLJUMP:
+			velocity = WALL_JUMP_HEIGHT
+			velocity.x *= get_wall_normal().x
+			character.scale.x = -1 if velocity.x > 0 else 1
+			animated_sprite_2d.play("jump")
+		State.ATTACK1:
+			animation_player.play("attack1")
+		State.ATTACK2:
+			animation_player.play("attack2")

@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://indqiyswokfh"]
+
+[ext_resource type="Script" uid="uid://boaf57rfq42sl" path="res://Enemy/enemy.gd" id="1_px1sc"]
+[ext_resource type="Script" uid="uid://bci57mj44hm6k" path="res://StateSystem.gd" id="2_am0pq"]
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 4
+script = ExtResource("1_px1sc")
+
+[node name="Character" type="Marker2D" parent="."]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Character"]
+animation = &""
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="StateStstem" type="Node2D" parent="."]
+script = ExtResource("2_am0pq")
+metadata/_custom_type_script = "uid://bci57mj44hm6k"
