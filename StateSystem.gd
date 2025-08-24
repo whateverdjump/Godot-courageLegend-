@@ -20,7 +20,7 @@ func _physics_process(delta: float) -> void:
 		var next := owner.get_next_state(state_value) as int
 		if next == state_value:
 			break
-		print('状态切换', next, state_value)
+		#print('状态切换', next, state_value)
 		state_value = next
 
 		awaitTimer = 0

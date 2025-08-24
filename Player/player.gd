@@ -8,6 +8,7 @@ extends CharacterBody2D
 @onready var back_wall_raycast: RayCast2D = $Character/BackWallRaycast
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var attack_timer: Timer = $AttackTimer
+@onready var stats: Stats = $Stats
 
 enum State {
 	IDLE,
@@ -18,9 +19,11 @@ enum State {
 	WALLSLIDE,
 	WALLJUMP,
 	ATTACK1,
-	ATTACK2
+	ATTACK2,
+	HIT
 }
 
+var pending_demage: Demage
 var gravity := ProjectSettings.get_setting("physics/2d/default_gravity") as float
 var getLastDir := 1.0
 var lastState := -1
@@ -33,6 +36,8 @@ const WALL_JUMP_HEIGHT := Vector2(1000, -350.0)
 const FLOOR_ACCELERATION := MOVE_SPEED / 0.1
 const AIR_ACCELERATION := MOVE_SPEED / 0.02
 const SLIDE_SPEED := 0.5
+# 被击中后移动的距离
+const KNOCKBACK_AMOUNT := 200 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("jump"):
@@ -53,6 +58,8 @@ func tick_physics(state: State, delta: float) -> void:
 		State.WALLSLIDE:
 			slide(SLIDE_SPEED, delta)
 		State.WALLJUMP:
+			move(gravity, delta)
+		State.HIT:
 			move(gravity, delta)
 
 func move(gravity: float, delta: float) -> void:
@@ -77,6 +84,9 @@ func slide(gravity: float, delta: float) -> void:
 func get_next_state(state: State) -> int:
 	var dir = Input.get_axis("move_left","move_right")
 	var can_run = is_on_floor() and dir
+	
+	if pending_demage:
+		return State.HIT
 #	郊狼时间
 	var can_jump = (state in IS_FLOOR and coyote_timer.time_left > 0) || (lastState in IS_FLOOR and coyote_timer.time_left > 0)
 	if can_jump:
@@ -127,6 +137,9 @@ func get_next_state(state: State) -> int:
 		State.ATTACK2:
 			if not animation_player.is_playing():
 				return State.IDLE
+		State.HIT:
+			if not animation_player.is_playing():
+				return State.IDLE
 	
 	return state
 	
@@ -155,3 +168,19 @@ func change_state(form: State, to: State) -> void:
 			animation_player.play("attack1")
 		State.ATTACK2:
 			animation_player.play("attack2")
+		State.HIT:
+			animation_player.play("hurt")
+			stats.health -= pending_demage.amount
+			var retreat_dir = pending_demage.source.global_position.direction_to(global_position)
+
+			#velocity = retreat_dir * KNOCKBACK_AMOUNT
+			velocity = Vector2(-109, -100)
+
+			print('击打别人后返回的坐标', velocity)
+			pending_demage = null
+
+func _on_hurtbox_hurt(hitbox: Hitbox) -> void:
+	pending_demage = Demage.new()
+	pending_demage.amount = 1
+	pending_demage.source = hitbox.owner
+	print('啊!!我被击中了!!!',pending_demage.source)

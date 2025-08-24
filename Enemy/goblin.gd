@@ -38,11 +38,12 @@ func tick_physics(state: State, delta: float) -> void:
 func get_next_state(state: State) -> int:
 	if attack_ray_cast.is_colliding() and not state in CAN_ATTACK and attack_interval_timer.time_left == 0:
 		attack_interval_timer.start()
-		print(attack_interval_timer.time_left, '这个值')
 		return State.ATTACK1
 	
 	match state:
 		State.IDLE:
+			if attack_ray_cast.is_colliding() and attack_interval_timer.time_left > 0 and player_ray_cast.is_colliding():
+				return state
 			if player_ray_cast.is_colliding():
 				return State.RUN
 			if state_ststem.awaitTimer > 3:
@@ -56,8 +57,10 @@ func get_next_state(state: State) -> int:
 			if not player_ray_cast.is_colliding() and see_player_timer.is_stopped():
 				return State.WALK
 		State.ATTACK1:
-			if not animation_player.is_playing() and see_player_timer.is_stopped():
+			if not animation_player.is_playing() and attack_ray_cast.is_colliding():
 				return State.ATTACK2
+			if not animation_player.is_playing():
+				return State.RUN
 		State.ATTACK2:
 			if not animation_player.is_playing():
 				return State.IDLE

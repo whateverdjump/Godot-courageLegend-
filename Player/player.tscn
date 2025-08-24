@@ -1,4 +1,4 @@
-[gd_scene load_steps=70 format=3 uid="uid://dlbdo0juf0pvs"]
+[gd_scene load_steps=74 format=3 uid="uid://dlbdo0juf0pvs"]
 
 [ext_resource type="Script" uid="uid://dn0jaidwus2gx" path="res://Player/player.gd" id="1_4ntmi"]
 [ext_resource type="Texture2D" uid="uid://brevab53lt70i" path="res://Assets/character/_Idle.png" id="1_l8h54"]
@@ -8,11 +8,13 @@
 [ext_resource type="Texture2D" uid="uid://bjeh633w1dfti" path="res://Assets/character/_Jump.png" id="3_k53q1"]
 [ext_resource type="Texture2D" uid="uid://ycva08lohvhv" path="res://Assets/character/_Run.png" id="4_fhl08"]
 [ext_resource type="Texture2D" uid="uid://bkv2bw4hv60kc" path="res://Assets/character/_JumpFallInbetween.png" id="5_apopc"]
+[ext_resource type="Texture2D" uid="uid://dyt3xc0m88ddh" path="res://Assets/character/_Hit.png" id="5_dkpta"]
 [ext_resource type="Script" uid="uid://bci57mj44hm6k" path="res://StateSystem.gd" id="5_vtle1"]
 [ext_resource type="Texture2D" uid="uid://df8hdh564wpwa" path="res://Assets/character/_WallClimbNoMovement.png" id="8_p5o4e"]
 [ext_resource type="Texture2D" uid="uid://bf87bqoq1nrg2" path="res://Assets/character/_WallSlide.png" id="9_gu6f8"]
 [ext_resource type="Script" uid="uid://jc2u7rl0oo75" path="res://Classes/Hitbox.gd" id="11_5htga"]
 [ext_resource type="Script" uid="uid://ikyvo503wanu" path="res://Classes/Hurtbox.gd" id="12_p5o4e"]
+[ext_resource type="Script" uid="uid://ci5lsmpstgrm2" path="res://Classes/Stats.gd" id="14_gu6f8"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_755ss"]
 atlas = ExtResource("2_apopc")
@@ -65,6 +67,10 @@ region = Rect2(120, 0, 120, 80)
 [sub_resource type="AtlasTexture" id="AtlasTexture_sm0op"]
 atlas = ExtResource("2_x3vf3")
 region = Rect2(240, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wvbyc"]
+atlas = ExtResource("5_dkpta")
+region = Rect2(0, 0, 120, 80)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4ntmi"]
 atlas = ExtResource("1_l8h54")
@@ -264,6 +270,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_wvbyc")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_4ntmi")
 }, {
 "duration": 1.0,
@@ -458,6 +472,18 @@ tracks/3/keys = {
 "update": 1,
 "values": [true]
 }
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Character/AnimatedSprite2D:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
 
 [sub_resource type="Animation" id="Animation_wvbyc"]
 resource_name = "attack1"
@@ -541,11 +567,53 @@ tracks/2/keys = {
 "values": [true, false, true]
 }
 
+[sub_resource type="Animation" id="Animation_c4i3b"]
+resource_name = "hurt"
+length = 0.4
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Character/AnimatedSprite2D:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"hurt"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Character/AnimatedSprite2D:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [0, 0, 0, 0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Character/AnimatedSprite2D:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0.160784), Color(1, 1, 1, 1), Color(1, 1, 1, 0.584314), Color(1, 1, 1, 1)]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_c4i3b"]
 _data = {
 &"RESET": SubResource("Animation_1kmt7"),
 &"attack1": SubResource("Animation_wvbyc"),
-&"attack2": SubResource("Animation_gvnt1")
+&"attack2": SubResource("Animation_gvnt1"),
+&"hurt": SubResource("Animation_c4i3b")
 }
 
 [node name="Player" type="CharacterBody2D"]
@@ -614,3 +682,9 @@ one_shot = true
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 0.2
 one_shot = true
+
+[node name="Stats" type="Node" parent="."]
+script = ExtResource("14_gu6f8")
+metadata/_custom_type_script = "uid://ci5lsmpstgrm2"
+
+[connection signal="hurt" from="Character/Hurtbox" to="." method="_on_hurtbox_hurt"]
