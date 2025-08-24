@@ -487,7 +487,7 @@ tracks/4/keys = {
 
 [sub_resource type="Animation" id="Animation_wvbyc"]
 resource_name = "attack1"
-length = 0.4
+length = 0.35
 step = 0.1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -520,7 +520,7 @@ tracks/2/path = NodePath("Character/Hitbox/CollisionAttack1:disabled")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.100045, 0.4),
+"times": PackedFloat32Array(0, 0.100045, 0.346894),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [true, false, true]
@@ -629,12 +629,12 @@ sprite_frames = SubResource("SpriteFrames_5htga")
 animation = &"attack1"
 
 [node name="WallRaycast" type="RayCast2D" parent="Character"]
-position = Vector2(3, -14)
+position = Vector2(3, 15)
 target_position = Vector2(7, 0)
 
 [node name="BackWallRaycast" type="RayCast2D" parent="Character"]
-position = Vector2(-1, -14)
-target_position = Vector2(-9, 0)
+position = Vector2(-5, 15)
+target_position = Vector2(-6, 0)
 
 [node name="Hitbox" type="Area2D" parent="Character"]
 collision_layer = 0
@@ -681,6 +681,9 @@ one_shot = true
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 0.2
+one_shot = true
+
+[node name="IneffectiveTimer" type="Timer" parent="."]
 one_shot = true
 
 [node name="Stats" type="Node" parent="."]

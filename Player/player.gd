@@ -9,6 +9,7 @@ extends CharacterBody2D
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var attack_timer: Timer = $AttackTimer
 @onready var stats: Stats = $Stats
+@onready var ineffective_timer: Timer = $IneffectiveTimer
 
 enum State {
 	IDLE,
@@ -48,33 +49,35 @@ func _unhandled_input(event: InputEvent) -> void:
 func tick_physics(state: State, delta: float) -> void:
 	match state:
 		State.IDLE:
-			move(gravity, delta)
+			move(gravity, delta, true)
 		State.RUN:
-			move(gravity, delta)
+			move(gravity, delta, true)
 		State.JUMP:
-			move(gravity, delta)
+			move(gravity, delta, true)
 		State.JUMPFALLINBETWEEN, State.FALL:
-			move(gravity, delta)
+			move(gravity, delta, true)
 		State.WALLSLIDE:
-			slide(SLIDE_SPEED, delta)
+			slide(SLIDE_SPEED, delta, false)
 		State.WALLJUMP:
-			move(gravity, delta)
+			move(gravity, delta, true)
 		State.HIT:
-			move(gravity, delta)
+			move(gravity, delta, false)
 
-func move(gravity: float, delta: float) -> void:
+func move(gravity: float, delta: float, isMove: bool) -> void:
 	var dir = Input.get_axis("move_left","move_right")
 	var ACCELERATION := FLOOR_ACCELERATION if is_on_floor() else AIR_ACCELERATION
 	if dir:
 		character.scale.x = dir
-	velocity.x = move_toward(velocity.x, MOVE_SPEED * dir, ACCELERATION * delta)
+	if isMove:
+		velocity.x = move_toward(velocity.x, MOVE_SPEED * dir, ACCELERATION * delta)
 	velocity.y += gravity * delta
 	move_and_slide()
-func slide(gravity: float, delta: float) -> void:
+func slide(gravity: float, delta: float, isMove: bool) -> void:
 	var dir = Input.get_axis("move_left","move_right")
 	if dir:
 		character.scale.x = -dir
-	velocity.x = MOVE_SPEED * dir
+	if isMove:
+		velocity.x = MOVE_SPEED * dir
 	if state_ststem.awaitTimer < 0.5:
 		velocity.y += gravity
 	else:
@@ -126,6 +129,9 @@ func get_next_state(state: State) -> int:
 				return State.WALLJUMP
 			if is_on_floor():
 				return State.IDLE
+			if state_ststem.awaitTimer > 0 and not back_wall_raycast.is_colliding():
+				return State.IDLE
+
 		State.WALLJUMP:
 			if is_on_floor():
 				return State.IDLE
@@ -173,14 +179,13 @@ func change_state(form: State, to: State) -> void:
 			stats.health -= pending_demage.amount
 			var retreat_dir = pending_demage.source.global_position.direction_to(global_position)
 
-			#velocity = retreat_dir * KNOCKBACK_AMOUNT
-			velocity = Vector2(-109, -100)
-
-			print('击打别人后返回的坐标', velocity)
+			velocity = retreat_dir * KNOCKBACK_AMOUNT
 			pending_demage = null
 
 func _on_hurtbox_hurt(hitbox: Hitbox) -> void:
+	if ineffective_timer.time_left > 0:
+		return
+	ineffective_timer.start()
 	pending_demage = Demage.new()
 	pending_demage.amount = 1
 	pending_demage.source = hitbox.owner
-	print('啊!!我被击中了!!!',pending_demage.source)

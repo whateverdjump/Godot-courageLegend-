@@ -1,6 +1,7 @@
 class_name StateStstem
 extends Node2D
 
+var status_same := -1
 var state_value := -1:
 	set(v):
 		if state_value == v:

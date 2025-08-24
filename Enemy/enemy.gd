@@ -19,8 +19,10 @@ var gravity := ProjectSettings.get_setting("physics/2d/default_gravity") as floa
 			await ready
 		character.scale.x = v
 
+@export var acceleration: float = 2000.0
 
-func move(speed: float, delta: float) -> void:	
-	velocity.x = speed * presend_dir
+func move(speed: float, delta: float) -> void:
+	velocity.x = move_toward(velocity.x, speed * presend_dir, acceleration * delta)
+	# velocity.x = speed * presend_dir
 	velocity.y += gravity * delta
 	move_and_slide()
