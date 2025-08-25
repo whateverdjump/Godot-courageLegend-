@@ -675,6 +675,10 @@ libraries = {
 &"": SubResource("AnimationLibrary_c4i3b")
 }
 
+[node name="JumpRequestTimer" type="Timer" parent="."]
+wait_time = 0.2
+one_shot = true
+
 [node name="CoyoteTimer" type="Timer" parent="."]
 wait_time = 0.1
 one_shot = true

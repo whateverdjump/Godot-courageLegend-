@@ -10,7 +10,7 @@ extends CharacterBody2D
 @onready var attack_timer: Timer = $AttackTimer
 @onready var stats: Stats = $Stats
 @onready var ineffective_timer: Timer = $IneffectiveTimer
-
+@onready var jump_request_timer: Timer = $JumpRequestTimer
 enum State {
 	IDLE,
 	RUN,
@@ -26,8 +26,6 @@ enum State {
 
 var pending_demage: Demage
 var gravity := ProjectSettings.get_setting("physics/2d/default_gravity") as float
-var getLastDir := 1.0
-var lastState := -1
 
 const IS_FLOOR := [State.IDLE, State.RUN]
 const IS_FALL := [State.JUMPFALLINBETWEEN, State.FALL]
@@ -42,7 +40,7 @@ const KNOCKBACK_AMOUNT := 200
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("jump"):
-		coyote_timer.start()
+		jump_request_timer.start()
 	if Input.is_action_just_pressed("attack"):
 		attack_timer.start()
 
@@ -91,8 +89,9 @@ func get_next_state(state: State) -> int:
 	if pending_demage:
 		return State.HIT
 #	郊狼时间
-	var can_jump = (state in IS_FLOOR and coyote_timer.time_left > 0) || (lastState in IS_FLOOR and coyote_timer.time_left > 0)
-	if can_jump:
+	var can_jump = is_on_floor() or coyote_timer.time_left > 0
+	var isJump = can_jump and jump_request_timer.time_left > 0
+	if isJump:
 		return State.JUMP
 	if state in IS_FALL and wall_raycast.is_colliding() and dir:
 		return State.WALLSLIDE
@@ -125,7 +124,7 @@ func get_next_state(state: State) -> int:
 			if is_on_floor():
 				return State.IDLE
 		State.WALLSLIDE:
-			if coyote_timer.time_left > 0:
+			if jump_request_timer.time_left > 0:
 				return State.WALLJUMP
 			if is_on_floor():
 				return State.IDLE
@@ -147,16 +146,20 @@ func get_next_state(state: State) -> int:
 			if not animation_player.is_playing():
 				return State.IDLE
 	
-	return state
+	return state_ststem.KEEP_CURRENT
 	
 func change_state(form: State, to: State) -> void:
-	lastState = form
+	print('当前状态', to, is_on_floor())
+	if form in IS_FLOOR and to != State.JUMP:
+		coyote_timer.start()
 	match to:
 		State.IDLE:
 			animated_sprite_2d.play("idle")
 		State.RUN:
 			animated_sprite_2d.play("run")
 		State.JUMP:
+			coyote_timer.stop()
+			jump_request_timer.stop()
 			velocity.y = JUMP_HEIGHT
 			animated_sprite_2d.play("jump")
 		State.JUMPFALLINBETWEEN:
@@ -166,6 +169,7 @@ func change_state(form: State, to: State) -> void:
 		State.WALLSLIDE:
 			animated_sprite_2d.play("wall_slide")
 		State.WALLJUMP:
+			jump_request_timer.stop()
 			velocity = WALL_JUMP_HEIGHT
 			velocity.x *= get_wall_normal().x
 			character.scale.x = -1 if velocity.x > 0 else 1

@@ -39,6 +39,8 @@ func tick_physics(state: State, delta: float) -> void:
 			move(MOVE_SPEED, delta)
 
 func get_next_state(state: State) -> int:
+	if stats.health == 0:
+		return State.DEATH if state != State.DEATH else state_ststem.KEEP_CURRENT
 
 	if attack_ray_cast.is_colliding() and not state in CAN_ATTACK and attack_interval_timer.time_left == 0:
 		attack_interval_timer.start()
@@ -46,8 +48,7 @@ func get_next_state(state: State) -> int:
 	if pending_demage:
 		print('状态', state, pending_demage)
 		return State.HURT
-	if stats.health == 0:
-		return State.DEATH
+
 
 	match state:
 		State.IDLE:
@@ -77,7 +78,7 @@ func get_next_state(state: State) -> int:
 			if not animated_sprite_2d.is_playing():
 				return State.RUN
 
-	return state
+	return state_ststem.KEEP_CURRENT
 	
 func change_state(form: State, to: State) -> void:
 	match to:
