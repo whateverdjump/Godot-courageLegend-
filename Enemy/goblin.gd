@@ -40,14 +40,15 @@ func tick_physics(state: State, delta: float) -> void:
 
 func get_next_state(state: State) -> int:
 	if stats.health == 0:
-		return State.DEATH if state != State.DEATH else state_ststem.KEEP_CURRENT
-
+		return state_ststem.KEEP_CURRENT if state == State.DEATH else State.DEATH
+	if pending_demage:
+		print('状态',state)
+		return State.HURT
+		
 	if attack_ray_cast.is_colliding() and not state in CAN_ATTACK and attack_interval_timer.time_left == 0:
 		attack_interval_timer.start()
 		return State.ATTACK1
-	if pending_demage:
-		print('状态', state, pending_demage)
-		return State.HURT
+
 
 
 	match state:

@@ -1,13 +1,12 @@
 class_name StateStstem
 extends Node2D
 
-var KEEP_CURRENT := -1
+const KEEP_CURRENT := -1
 var state_value := -1:
 	set(v):
-		if state_value == v:
-			return
 		owner.change_state(state_value, v)
 		state_value = v
+		
 var awaitTimer:float = 0
 
 func _ready() -> void:

@@ -149,7 +149,6 @@ func get_next_state(state: State) -> int:
 	return state_ststem.KEEP_CURRENT
 	
 func change_state(form: State, to: State) -> void:
-	print('当前状态', to, is_on_floor())
 	if form in IS_FLOOR and to != State.JUMP:
 		coyote_timer.start()
 	match to:
@@ -158,10 +157,12 @@ func change_state(form: State, to: State) -> void:
 		State.RUN:
 			animated_sprite_2d.play("run")
 		State.JUMP:
+			
 			coyote_timer.stop()
 			jump_request_timer.stop()
 			velocity.y = JUMP_HEIGHT
 			animated_sprite_2d.play("jump")
+			move_and_slide()
 		State.JUMPFALLINBETWEEN:
 			animated_sprite_2d.play("jump_fall_inbet_ween")
 		State.FALL:
